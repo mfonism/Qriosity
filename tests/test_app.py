@@ -1,18 +1,9 @@
-from pathlib import Path
-
 import aiohttp
 import pytest
 
-BASE_URL = "http://localhost:8080"
-TEST_DB_PATH = Path(__file__).absolute().parent.joinpath("test_db.sqlite")
-
-
-def make_url(path):
-    return "{}{}".format(BASE_URL, path)
-
 
 @pytest.mark.asyncio
-async def test_handle_user_create():
+async def test_handle_user_create(make_url):
     payload = {
         "email": "tintin@gmail.com",
         "username": "Tintin",
@@ -22,7 +13,6 @@ async def test_handle_user_create():
         async with test_client.post(make_url("/users/"), json=payload) as resp:
             assert resp.status == 200
             resp_json = await resp.json()
-            print(resp_json)
             assert resp_json["status"] == "ok"
             assert resp_json["data"] == {
                 "email": payload["email"],
