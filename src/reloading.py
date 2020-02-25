@@ -9,10 +9,9 @@ Thank you, samuelcolvin!
 """
 import os
 import signal
-from functools import partial
 from multiprocessing import Process
 
-from watchgod import awatch, DefaultDirWatcher
+from watchgod import watch, DefaultDirWatcher
 
 
 def _start_process(target, args, kwargs):
@@ -35,9 +34,9 @@ class DotPyWatcher(DefaultDirWatcher):
         return entry.name.endswith((".py",))
 
 
-class AsyncHotReloader:
+class HotReloader:
     @staticmethod
-    async def arun(
+    def run(
         path,
         target,
         *,
@@ -53,20 +52,19 @@ class AsyncHotReloader:
 
         restart it whenever file changes in path.
         """
-        watcher = awatch(
+        watcher = watch(
             path,
             watcher_cls=watcher_cls or DotPyWatcher,
             debounce=debounce,
             min_sleep=min_sleep,
         )
-        start_process = partial(_start_process, target=target, args=args, kwargs=kwargs)
-        process = await watcher.run_in_executor(start_process)
+        process = _start_process(target=target, args=args, kwargs=kwargs)
         reloads = 0
 
-        async for changes in watcher:
-            callback and await callback(changes)
-            await watcher.run_in_executor(_stop_process, process)
-            process = await watcher.run_in_executor(start_process)
+        for changes in watcher:
+            callback and callback(changes)
+            _stop_process(process)
+            process = _start_process(target=target, args=args, kwargs=kwargs)
             reloads += 1
 
         return reloads
