@@ -15,6 +15,7 @@ async def test_handle_user_create(make_url):
             resp_json = await resp.json()
             assert resp_json["status"] == "ok"
             assert resp_json["data"] == {
+                "id": 1,
                 "email": payload["email"],
                 "username": payload["username"],
             }

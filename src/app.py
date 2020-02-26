@@ -3,7 +3,7 @@ from aiohttp import web
 import config
 
 demo_options = {
-    "CLEANUP_CTX_COROS": [config.init_db_conn],
+    "CLEANUP_CTX_COROS": [config.manage_tables, config.manage_db_conn],
     "ROUTER": config.routes,
 }
 
