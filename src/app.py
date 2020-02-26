@@ -3,7 +3,8 @@ from aiohttp import web
 import config
 
 demo_options = {
-    "CLEANUP_CTX_COROS": [config.manage_tables, config.manage_db_conn],
+    "CLEANUP_CTX": [config.manage_db_conn],
+    "ON_STARTUP": [config.create_tables],
     "ROUTER": config.routes,
 }
 
@@ -19,9 +20,13 @@ def _init_app(**options):
     if options.get("ROUTER") is not None:
         app.add_routes(options["ROUTER"])
 
-    if options.get("CLEANUP_CTX_COROS") is not None:
-        for coro in options["CLEANUP_CTX_COROS"]:
+    if options.get("CLEANUP_CTX") is not None:
+        for coro in options["CLEANUP_CTX"]:
             app.cleanup_ctx.append(coro)
+
+    if options.get("ON_STARTUP") is not None:
+        for coro in options["ON_STARTUP"]:
+            app.on_startup.append(coro)
 
     return app
 

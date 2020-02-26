@@ -26,14 +26,17 @@ async def manage_db_conn(app):
         yield
 
 
-async def manage_tables(app):
+async def create_tables(app):
     """
-    Manage the creation and dropping of tables at the
-    beginning and end (respectively) of argument app's lifecycle.
+    Create required tables at the beginning of app's lifecycle.
+    Useful as a subscriber to app's on_startup signal.
 
-    https://docs.aiohttp.org/en/stable/web_reference.html#aiohttp.web.Application.cleanup_ctx
+    https://docs.aiohttp.org/en/stable/web_reference.html#aiohttp.web.Application.on_startup
     """
-    mode = "test" if app["TEST"] else ""
+    if app["TEST"]:
+        return
+
+    mode = "dev" if app["DEV"] else ""
     db_path = str(get_db_path(basedir, mode=mode))
 
     users_table_create_stmt, users_table_drop_stmt = stmts.get_create_drop_stmts(
@@ -44,12 +47,4 @@ async def manage_tables(app):
     async with aiosqlite.connect(db_path) as conn:
         cursor = await conn.cursor()
         await cursor.execute(users_table_create_stmt)
-        await conn.commit()
-
-    yield
-
-    # execute DROP statements
-    async with aiosqlite.connect(db_path) as conn:
-        cursor = await conn.cursor()
-        await cursor.execute(users_table_drop_stmt)
         await conn.commit()

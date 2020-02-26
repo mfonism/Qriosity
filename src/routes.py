@@ -16,6 +16,7 @@ async def handle_user_create(request):
 
     conn = request.config_dict["DB_CONN"]
     cursor = await conn.cursor()
+
     await cursor.execute(
         """
         INSERT INTO {table_fullname}
@@ -27,6 +28,7 @@ async def handle_user_create(request):
         ),
         (email, username, password),
     )
+    await conn.commit()
     await cursor.execute(
         """
         SELECT id, username, email FROM {table_fullname} WHERE id = (?)
@@ -35,7 +37,6 @@ async def handle_user_create(request):
         ),
         [cursor.lastrowid],
     )
-
     row = await cursor.fetchone()
 
     return web.json_response(
