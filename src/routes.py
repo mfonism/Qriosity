@@ -1,3 +1,5 @@
+import sqlite3
+
 from aiohttp import web
 
 from config import routes
@@ -17,27 +19,36 @@ async def handle_user_create(request):
     conn = request.config_dict["DB_CONN"]
     cursor = await conn.cursor()
 
-    await cursor.execute(
-        """
-        INSERT INTO {table_fullname}
-        (email, username, pwd_hash)
-        VALUES
-        (?,?,?)
-        """.format(
-            table_fullname=users_table
-        ),
-        (email, username, password),
-    )
-    await conn.commit()
-    await cursor.execute(
-        """
-        SELECT id, username, email FROM {table_fullname} WHERE id = (?)
-        """.format(
-            table_fullname=users_table
-        ),
-        [cursor.lastrowid],
-    )
-    row = await cursor.fetchone()
+    try:
+        await cursor.execute(
+            """
+            INSERT INTO {table_fullname}
+            (email, username, pwd_hash)
+            VALUES
+            (?,?,?)
+            """.format(
+                table_fullname=users_table
+            ),
+            (email, username, password),
+        )
+        await conn.commit()
+        await cursor.execute(
+            """
+            SELECT id, username, email FROM {table_fullname} WHERE id = (?)
+            """.format(
+                table_fullname=users_table
+            ),
+            [cursor.lastrowid],
+        )
+        row = await cursor.fetchone()
+    except sqlite3.IntegrityError as exc:
+        await conn.rollback()
+        if "email" in str(exc):
+            return web.json_response(
+                {"error": "user with that email already exists"},
+                status=409,
+                reason="conflict",
+            )
 
     return web.json_response(
         {
