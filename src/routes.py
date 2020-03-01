@@ -47,18 +47,17 @@ async def handle_user_create(request):
             return web.json_response(
                 {"error": "user with that email already exists"},
                 status=409,
-                reason="conflict",
+                reason="Conflict",
             )
         if "username" in str(exc):
             return web.json_response(
                 {"error": "user with that username already exists"},
                 status=409,
-                reason="conflict",
+                reason="Conflict",
             )
 
     return web.json_response(
         {
-            "status": "ok",
             "data": {
                 "id": row["id"],
                 "username": row["username"],
