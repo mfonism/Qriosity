@@ -31,16 +31,6 @@ async def handle_user_create(request):
             ),
             (email, username, password),
         )
-        await conn.commit()
-        await cursor.execute(
-            """
-            SELECT id, username, email FROM {table_fullname} WHERE id = (?)
-            """.format(
-                table_fullname=users_table
-            ),
-            [cursor.lastrowid],
-        )
-        row = await cursor.fetchone()
     except sqlite3.IntegrityError as exc:
         await conn.rollback()
         if "email" in str(exc):
@@ -55,6 +45,17 @@ async def handle_user_create(request):
                 status=409,
                 reason="Conflict",
             )
+
+    await conn.commit()
+    await cursor.execute(
+        """
+        SELECT id, username, email FROM {table_fullname} WHERE id = (?)
+        """.format(
+            table_fullname=users_table
+        ),
+        [cursor.lastrowid],
+    )
+    row = await cursor.fetchone()
 
     return web.json_response(
         {
