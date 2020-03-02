@@ -22,6 +22,29 @@ async def test_handle_user_create(manage_users_table, make_url):
 
 
 @pytest.mark.asyncio
+async def test_num_users_in_db(manage_users_table, make_url):
+    payload = {
+        "email": "tintin@gmail.com",
+        "username": "Tintin",
+        "password": "y0u != n00b1e",
+    }
+
+    cursor = manage_users_table
+    await cursor.execute("""SELECT COUNT(*) FROM test_users""")
+    row = await cursor.fetchone()
+    assert row[0] == 0
+
+    async with aiohttp.ClientSession() as test_client:
+        async with test_client.post(make_url("/users/"), json=payload) as resp:
+            assert resp.status == 200
+            assert resp.reason == "OK"
+
+    await cursor.execute("""SELECT COUNT(*) FROM test_users""")
+    row = await cursor.fetchone()
+    assert row[0] == 1
+
+
+@pytest.mark.asyncio
 async def test_cannot_create_user_with_duplicate_email(manage_users_table, make_url):
     payload = {
         "email": "tintin@gmail.com",

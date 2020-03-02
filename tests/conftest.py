@@ -43,8 +43,7 @@ async def fixture_manage_users_table(test_db_path):
         await conn.commit()
         await cursor.execute(table_create_stmt)
         await conn.commit()
-
-    return
+        yield cursor
 
 
 @pytest.fixture(name="base_url", scope="session")
