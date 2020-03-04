@@ -151,3 +151,34 @@ async def test_cannot_create_user_with_duplicate_username(manage_users_table, ma
             assert resp.reason == "Conflict"
             resp_json = await resp.json()
             assert resp_json["error"] == "user with that username already exists"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "bad_data, expected_error",
+    [
+        # empty string
+        ({"username": ""}, "invalid username"),
+        # string containing only space chars
+        ({"username": "\n   \t"}, "invalid username"),
+        # string under four chars long
+        ({"username": "abc"}, "invalid username"),
+        # string under four chars long when stripped
+        ({"username": "  abc  "}, "invalid username"),
+    ],
+)
+async def test_cannot_create_user_with_bad_payload(
+    manage_users_table, make_url, bad_data, expected_error
+):
+    payload = {
+        "email": "tintin@gmail.com",
+        "username": "Tintin",
+        "password": "y0u != n00b1e",
+    }
+    payload = {**payload, **bad_data}
+    async with aiohttp.ClientSession() as client:
+        async with client.post(make_url("/users/"), json=payload) as resp:
+            assert resp.status == 400
+            assert resp.reason == "Bad Request"
+            resp_json = await resp.json()
+            assert resp_json["error"] == expected_error

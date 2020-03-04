@@ -10,9 +10,14 @@ from db.utils import get_table_fullname
 @routes.post("/users/")
 async def handle_user_create(request):
     data = await request.json()
-    email = data["email"]
-    username = data["username"]
-    password = data["password"]
+    email = data["email"].strip()
+    username = data["username"].strip()
+    password = data["password"].strip()
+
+    if not auth.validate_username(username):
+        return web.json_response(
+            {"error": "invalid username"}, status=400, reason="Bad Request"
+        )
 
     mode = "test" if request.config_dict["TEST"] else ""
     users_table = get_table_fullname("users", mode)

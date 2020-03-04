@@ -1,3 +1,5 @@
+import re
+
 import bcrypt
 
 
@@ -13,3 +15,7 @@ def check_password_hash(plaintext, hash):
     byte_encoded_plaintext = plaintext.encode("utf-8")
     byte_encoded_hash = hash.encode("utf-8")
     return bcrypt.checkpw(byte_encoded_plaintext, byte_encoded_hash)
+
+
+def validate_username(name):
+    return all([re.compile(r"^[\w.@+-]+\Z").search(name), len(name) > 4])
