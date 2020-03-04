@@ -68,6 +68,25 @@ async def test_created_user_data_in_db(manage_users_table, make_url):
 
 
 @pytest.mark.asyncio
+async def test_plaintext_password_is_not_stored_on_db(manage_users_table, make_url):
+    payload = {
+        "email": "tintin@gmail.com",
+        "username": "Tintin",
+        "password": "y0u != n00b1e",
+    }
+    async with aiohttp.ClientSession() as client:
+        async with client.post(make_url("/users/"), json=payload) as resp:
+            assert resp.status == 200
+            assert resp.reason == "OK"
+
+    cursor = manage_users_table
+    await cursor.execute("""SELECT * FROM test_users;""")
+    row = await cursor.fetchone()
+
+    assert payload["password"] not in row
+
+
+@pytest.mark.asyncio
 async def test_cannot_create_user_with_duplicate_email(manage_users_table, make_url):
     payload = {
         "email": "tintin@gmail.com",

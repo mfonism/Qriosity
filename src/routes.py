@@ -2,6 +2,7 @@ import sqlite3
 
 from aiohttp import web
 
+import auth
 from config import routes
 from db.utils import get_table_fullname
 
@@ -29,7 +30,7 @@ async def handle_user_create(request):
             """.format(
                 table_fullname=users_table
             ),
-            (email, username, password),
+            (email, username, auth.get_password_hash(password)),
         )
     except sqlite3.IntegrityError as exc:
         await conn.rollback()
