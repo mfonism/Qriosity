@@ -62,9 +62,9 @@ async def test_created_user_data_in_db(manage_users_table, make_url):
             await cursor.execute("""SELECT id, email, username FROM test_users;""")
             row = await cursor.fetchone()
 
-            assert row[0] == data["id"]
-            assert row[1] == data["email"]
-            assert row[2] == data["username"]
+            assert row["id"] == data["id"]
+            assert row["email"] == data["email"]
+            assert row["username"] == data["username"]
 
 
 @pytest.mark.asyncio

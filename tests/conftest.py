@@ -38,6 +38,7 @@ async def fixture_manage_users_table(test_db_path):
     )
 
     async with aiosqlite.connect(str(test_db_path)) as conn:
+        conn.row_factory = aiosqlite.Row
         cursor = await conn.cursor()
         await cursor.execute(table_drop_stmt)
         await conn.commit()
