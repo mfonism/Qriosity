@@ -1,6 +1,8 @@
 import aiohttp
 import pytest
 
+import auth
+
 
 @pytest.mark.asyncio
 async def test_handle_user_create(manage_users_table, make_url):
@@ -84,6 +86,25 @@ async def test_plaintext_password_is_not_stored_on_db(manage_users_table, make_u
     row = await cursor.fetchone()
 
     assert payload["password"] not in row
+
+
+@pytest.mark.asyncio
+async def test_salted_hashed_password_in_db(manage_users_table, make_url):
+    payload = {
+        "email": "tintin@gmail.com",
+        "username": "Tintin",
+        "password": "y0u != n00b1e",
+    }
+    async with aiohttp.ClientSession() as client:
+        async with client.post(make_url("/users/"), json=payload) as resp:
+            assert resp.status == 200
+            assert resp.reason == "OK"
+
+    cursor = manage_users_table
+    await cursor.execute("""SELECT pwd_hash FROM test_users;""")
+    row = await cursor.fetchone()
+
+    assert auth.check_password_hash(payload["password"], row["pwd_hash"])
 
 
 @pytest.mark.asyncio
