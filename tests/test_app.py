@@ -1,3 +1,6 @@
+import random
+import string
+
 import aiohttp
 import pytest
 
@@ -153,10 +156,18 @@ async def test_cannot_create_user_with_duplicate_username(manage_users_table, ma
             assert resp_json["error"] == "user with that username already exists"
 
 
+pwd_alphabet = set(string.printable) - set(string.whitespace)
+pwd_alphabet.add(" ")
+pwd_alphabet = list(pwd_alphabet)
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "bad_data, expected_error",
     [
+        # ------------------------------------------
+        # INVALID USERNAME
+        # ------------------------------------------
         # empty string
         ({"username": ""}, "invalid username"),
         # string containing only space chars
@@ -165,6 +176,19 @@ async def test_cannot_create_user_with_duplicate_username(manage_users_table, ma
         ({"username": "abc"}, "invalid username"),
         # string under four chars long when stripped
         ({"username": "  abc  "}, "invalid username"),
+        # ------------------------------------------
+        # BAD PASSWORD
+        # ------------------------------------------
+        # password under min length when stripped
+        ({"password": ""}, "bad password"),
+        ({"password": "a5exyMe"}, "bad password"),
+        ({"password": "  a5exyMe  "}, "bad password"),
+        ({"password": "\n       \t"}, "bad password"),
+        # password over max length
+        (
+            {"password": "".join(random.choice(pwd_alphabet) for i in range(65))},
+            "bad password",
+        ),
     ],
 )
 async def test_cannot_create_user_with_bad_payload(

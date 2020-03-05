@@ -19,3 +19,7 @@ def check_password_hash(plaintext, hash):
 
 def validate_username(name):
     return all([re.compile(r"^[\w.@+-]+\Z").search(name), len(name) > 4])
+
+
+def validate_password(pwd):
+    return all([len(pwd) >= 8 and len(pwd) <= 64])

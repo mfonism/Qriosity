@@ -19,6 +19,11 @@ async def handle_user_create(request):
             {"error": "invalid username"}, status=400, reason="Bad Request"
         )
 
+    if not auth.validate_password(password):
+        return web.json_response(
+            {"error": "bad password"}, status=400, reason="Bad Request"
+        )
+
     mode = "test" if request.config_dict["TEST"] else ""
     users_table = get_table_fullname("users", mode)
 
