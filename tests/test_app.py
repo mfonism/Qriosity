@@ -189,6 +189,10 @@ pwd_alphabet = list(pwd_alphabet)
             {"password": "".join(random.choice(pwd_alphabet) for i in range(65))},
             "bad password",
         ),
+        # password with strong similarity to email
+        ({"password": "pypylee1", "email": "pypyleecious@gmail.com"}, "bad password"),
+        # password with strong similarity to username
+        ({"password": "IAmTinboo", "username": "tinboobaby"}, "bad password"),
     ],
 )
 async def test_cannot_create_user_with_bad_payload(

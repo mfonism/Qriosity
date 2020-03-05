@@ -1,4 +1,5 @@
 import re
+from difflib import SequenceMatcher
 
 import bcrypt
 
@@ -21,5 +22,31 @@ def validate_username(name):
     return all([re.compile(r"^[\w.@+-]+\Z").search(name), len(name) > 4])
 
 
-def validate_password(pwd):
-    return all([len(pwd) >= 8 and len(pwd) <= 64])
+def _get_similarity_ratio(pwd, other):
+    for part in re.split(r"\W+", other) + [other]:
+        if SequenceMatcher(a=pwd, b=part).quick_ratio() >= 0.7:
+            return False
+    return True
+
+
+def validate_password(pwd, username, email):
+    """
+    Validate a password against a username and an email.
+
+    Return True if password is not strongly similar to either of the rest.
+    """
+    pwd = pwd.lower()
+    username = username.lower()
+    email.lower()
+    return all(
+        [
+            len(pwd) >= 8,
+            len(pwd) <= 64,
+            pwd not in username,
+            username not in pwd,
+            email not in pwd,
+            pwd not in email,
+            _get_similarity_ratio(pwd, username),
+            _get_similarity_ratio(pwd, email),
+        ]
+    )
