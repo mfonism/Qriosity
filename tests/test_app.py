@@ -193,6 +193,9 @@ pwd_alphabet = list(pwd_alphabet)
         ({"password": "pypylee1", "email": "pypyleecious@gmail.com"}, "bad password"),
         # password with strong similarity to username
         ({"password": "IAmTinboo", "username": "tinboobaby"}, "bad password"),
+        # password in the list of common passwords
+        ({"password": "bigpimpin1"}, "bad password"),
+        ({"password": "nopassword"}, "bad password"),
     ],
 )
 async def test_cannot_create_user_with_bad_payload(

@@ -1,7 +1,10 @@
+import gzip
 import re
 from difflib import SequenceMatcher
 
 import bcrypt
+
+from config import basedir
 
 
 def get_password_hash(plaintext, workfactor=13):
@@ -22,31 +25,42 @@ def validate_username(name):
     return all([re.compile(r"^[\w.@+-]+\Z").search(name), len(name) > 4])
 
 
-def _get_similarity_ratio(pwd, other):
+def _check_password_similarity(password, other):
     for part in re.split(r"\W+", other) + [other]:
-        if SequenceMatcher(a=pwd, b=part).quick_ratio() >= 0.7:
+        if SequenceMatcher(a=password, b=part).quick_ratio() >= 0.7:
             return False
     return True
 
 
-def validate_password(pwd, username, email):
+def _check_password_commonness(password):
+    with gzip.open(
+        basedir.joinpath("common-passwords.txt.gz"), "rt", encoding="utf-8"
+    ) as file:
+        for line in file:
+            if password == line.strip():
+                return False
+    return True
+
+
+def validate_password(password, username, email):
     """
     Validate a password against a username and an email.
 
     Return True if password is not strongly similar to either of the rest.
     """
-    pwd = pwd.lower()
+    password = password.lower()
     username = username.lower()
     email.lower()
     return all(
         [
-            len(pwd) >= 8,
-            len(pwd) <= 64,
-            pwd not in username,
-            username not in pwd,
-            email not in pwd,
-            pwd not in email,
-            _get_similarity_ratio(pwd, username),
-            _get_similarity_ratio(pwd, email),
+            len(password) >= 8,
+            len(password) <= 64,
+            password not in username,
+            username not in password,
+            email not in password,
+            password not in email,
+            _check_password_similarity(password, username),
+            _check_password_similarity(password, email),
+            _check_password_commonness(password),
         ]
     )
