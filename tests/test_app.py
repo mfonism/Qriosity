@@ -16,8 +16,8 @@ async def test_handle_user_create(manage_users_table, make_url):
     }
     async with aiohttp.ClientSession() as test_client:
         async with test_client.post(make_url("/users/"), json=payload) as resp:
-            assert resp.status == 200
-            assert resp.reason == "OK"
+            assert resp.status == 201
+            assert resp.reason == "Created"
             resp_json = await resp.json()
             assert resp_json["data"] == {
                 "id": 1,
@@ -41,8 +41,7 @@ async def test_num_users_in_db(manage_users_table, make_url):
 
     async with aiohttp.ClientSession() as test_client:
         async with test_client.post(make_url("/users/"), json=payload) as resp:
-            assert resp.status == 200
-            assert resp.reason == "OK"
+            assert resp.status == 201
 
     await cursor.execute("""SELECT COUNT(*) FROM test_users""")
     row = await cursor.fetchone()
@@ -58,8 +57,7 @@ async def test_created_user_data_in_db(manage_users_table, make_url):
     }
     async with aiohttp.ClientSession() as test_client:
         async with test_client.post(make_url("/users/"), json=payload) as resp:
-            assert resp.status == 200
-            assert resp.reason == "OK"
+            assert resp.status == 201
             resp_json = await resp.json()
             data = resp_json["data"]
 
@@ -81,8 +79,7 @@ async def test_plaintext_password_is_not_stored_on_db(manage_users_table, make_u
     }
     async with aiohttp.ClientSession() as client:
         async with client.post(make_url("/users/"), json=payload) as resp:
-            assert resp.status == 200
-            assert resp.reason == "OK"
+            assert resp.status == 201
 
     cursor = manage_users_table
     await cursor.execute("""SELECT * FROM test_users;""")
@@ -100,8 +97,7 @@ async def test_salted_hashed_password_in_db(manage_users_table, make_url):
     }
     async with aiohttp.ClientSession() as client:
         async with client.post(make_url("/users/"), json=payload) as resp:
-            assert resp.status == 200
-            assert resp.reason == "OK"
+            assert resp.status == 201
 
     cursor = manage_users_table
     await cursor.execute("""SELECT pwd_hash FROM test_users;""")
@@ -120,8 +116,7 @@ async def test_cannot_create_user_with_duplicate_email(manage_users_table, make_
     async with aiohttp.ClientSession() as test_client:
         # first instance of payload with email
         async with test_client.post(make_url("/users/"), json=payload) as resp:
-            assert resp.status == 200
-            assert resp.reason == "OK"
+            assert resp.status == 201
 
         # second instance of payload with email
         async with test_client.post(
@@ -143,8 +138,7 @@ async def test_cannot_create_user_with_duplicate_username(manage_users_table, ma
     async with aiohttp.ClientSession() as test_client:
         # first instance of payload with username
         async with test_client.post(make_url("/users/"), json=payload) as resp:
-            assert resp.status == 200
-            assert resp.reason == "OK"
+            assert resp.status == 201
 
         # second instance of payload with username
         async with test_client.post(

@@ -80,5 +80,7 @@ async def handle_user_create(request):
                 "username": row["username"],
                 "email": row["email"],
             },
-        }
+        },
+        status=201,
+        reason="Created",
     )
