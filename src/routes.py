@@ -19,6 +19,11 @@ async def handle_user_create(request):
             {"error": "invalid username"}, status=400, reason="Bad Request"
         )
 
+    if not auth.validate_email(email):
+        return web.json_response(
+            {"error": "invalid email"}, status=400, reason="Bad Request"
+        )
+
     if not auth.validate_password(password, username=username, email=email):
         return web.json_response(
             {"error": "bad password"}, status=400, reason="Bad Request"

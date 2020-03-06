@@ -213,3 +213,50 @@ async def test_cannot_create_user_with_bad_payload(
             assert resp.reason == "Bad Request"
             resp_json = await resp.json()
             assert resp_json["error"] == expected_error
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "invalid_email",
+    [
+        " ",
+        " @ ",
+        " @ . ",
+        "plainaddress",
+        "#@%^%#$@#$@#.com",
+        "@example.com",
+        "Joe Smith <email@example.com>",
+        "email.example.com",
+        "email@example@example.com",
+        ".email@example.com",
+        "email.@example.com",
+        "email..email@example.com",
+        "あいうえお@example.com",
+        "email@example.com (Joe Smith)",
+        "email@example",
+        "email@-example.com",
+        "email@example..com",
+        "Abc..123@example.com",
+        "”(),:;<>[\\]@example.com",
+        "just”not”right@example.com",
+        'this\\ is"really"not\\allowed@example.com',
+    ],
+)
+async def test_cannot_create_user_with_invalid_email(
+    manage_users_table, make_url, invalid_email
+):
+    """
+    List of invalid email addresses are selected from the list at
+    https://gist.github.com/cjaoude/fd9910626629b53c4d25
+    """
+    payload = {
+        "username": "Tintin",
+        "password": "y0u != n00b1e",
+    }
+    payload["email"] = invalid_email
+    async with aiohttp.ClientSession() as client:
+        async with client.post(make_url("/users/"), json=payload) as resp:
+            assert resp.status == 400
+            assert resp.reason == "Bad Request"
+            resp_json = await resp.json()
+            assert resp_json["error"] == "invalid email"

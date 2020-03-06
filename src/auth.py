@@ -6,6 +6,17 @@ import bcrypt
 
 from config import basedir
 
+email_username_regex = re.compile(
+    r"(^[-!#$%&'*+/=?^_`{}|~0-9A-Z]+(\.[-!#$%&'*+/=?^_`{}|~0-9A-Z]+)*\Z"
+    r'|^"([\001-\010\013\014\016-\037!#-\[\]-\177]|\\[\001-\011\013\014\016-\177])*"\Z)',  # noqa
+    re.IGNORECASE,
+)
+
+email_domain_regex = re.compile(
+    r"((?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+)(?:[A-Z0-9-]{2,63}(?<!-))\Z",
+    re.IGNORECASE,
+)
+
 
 def get_password_hash(plaintext, workfactor=13):
     byte_encoded_plaintext = plaintext.encode("utf-8")
@@ -64,3 +75,12 @@ def validate_password(password, username, email):
             _check_password_commonness(password),
         ]
     )
+
+
+def validate_email(email):
+    if "@" not in email:
+        return False
+
+    username, domain = email.rsplit("@", 1)
+
+    return email_username_regex.match(username) and email_domain_regex.match(domain)
