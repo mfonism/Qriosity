@@ -27,7 +27,7 @@ async def test_handle_user_create(manage_users_table, make_url):
 
 
 @pytest.mark.asyncio
-async def test_num_users_in_db(manage_users_table, make_url):
+async def test_created_user_in_db(manage_users_table, make_url):
     payload = {
         "email": "tintin@gmail.com",
         "username": "Tintin",
@@ -35,43 +35,38 @@ async def test_num_users_in_db(manage_users_table, make_url):
     }
 
     cursor = manage_users_table
-    await cursor.execute("""SELECT COUNT(*) FROM test_users""")
+
+    # assert initial user count is 0
+    await cursor.execute("""SELECT COUNT(*) FROM test_users;""")
     row = await cursor.fetchone()
     assert row[0] == 0
 
-    async with aiohttp.ClientSession() as test_client:
-        async with test_client.post(make_url("/users/"), json=payload) as resp:
-            assert resp.status == 201
-
-    await cursor.execute("""SELECT COUNT(*) FROM test_users""")
-    row = await cursor.fetchone()
-    assert row[0] == 1
-
-
-@pytest.mark.asyncio
-async def test_created_user_data_in_db(manage_users_table, make_url):
-    payload = {
-        "email": "tintin@gmail.com",
-        "username": "Tintin",
-        "password": "y0u != n00b1e",
-    }
+    # post payload to user create endpoint
     async with aiohttp.ClientSession() as test_client:
         async with test_client.post(make_url("/users/"), json=payload) as resp:
             assert resp.status == 201
             resp_json = await resp.json()
             data = resp_json["data"]
 
-            cursor = manage_users_table
-            await cursor.execute("""SELECT id, email, username FROM test_users;""")
-            row = await cursor.fetchone()
+    # assert user count is 1
+    await cursor.execute("""SELECT COUNT(*) FROM test_users;""")
+    row = await cursor.fetchone()
+    assert row[0] == 1
 
-            assert row["id"] == data["id"]
-            assert row["email"] == data["email"]
-            assert row["username"] == data["username"]
+    # check created user data in db against response data
+    await cursor.execute("""SELECT id, email, username FROM test_users;""")
+    row = await cursor.fetchone()
+    assert row["id"] == data["id"]
+    assert row["email"] == data["email"]
+    assert row["username"] == data["username"]
 
 
 @pytest.mark.asyncio
-async def test_plaintext_password_is_not_stored_on_db(manage_users_table, make_url):
+async def test_plaintext_password_not_leaked(manage_users_table, make_url):
+    """
+    Assert that the user supplied plaintext password is not returned in
+    the response, and can neither be found in the db.
+    """
     payload = {
         "email": "tintin@gmail.com",
         "username": "Tintin",
@@ -80,11 +75,13 @@ async def test_plaintext_password_is_not_stored_on_db(manage_users_table, make_u
     async with aiohttp.ClientSession() as client:
         async with client.post(make_url("/users/"), json=payload) as resp:
             assert resp.status == 201
+            resp_json = await resp.json()
+            data = resp_json["data"]
+            assert payload["password"] not in data.values()
 
     cursor = manage_users_table
     await cursor.execute("""SELECT * FROM test_users;""")
     row = await cursor.fetchone()
-
     assert payload["password"] not in row
 
 
@@ -98,11 +95,15 @@ async def test_salted_hashed_password_in_db(manage_users_table, make_url):
     async with aiohttp.ClientSession() as client:
         async with client.post(make_url("/users/"), json=payload) as resp:
             assert resp.status == 201
+            resp_json = await resp.json()
+            data = resp_json["data"]
 
     cursor = manage_users_table
     await cursor.execute("""SELECT pwd_hash FROM test_users;""")
     row = await cursor.fetchone()
-
+    # assert salted hash isn't leaked in response, and that
+    # payload password checks out with salted hash in db
+    assert row["pwd_hash"] not in data.values()
     assert auth.check_password_hash(payload["password"], row["pwd_hash"])
 
 
@@ -157,7 +158,7 @@ pwd_alphabet = list(pwd_alphabet)
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "bad_data, expected_error",
+    "invalid_data, expected_error",
     [
         # ------------------------------------------
         # INVALID USERNAME
@@ -192,17 +193,18 @@ pwd_alphabet = list(pwd_alphabet)
         ({"password": "nopassword"}, "bad password"),
     ],
 )
-async def test_cannot_create_user_with_bad_payload(
-    manage_users_table, make_url, bad_data, expected_error
+async def test_cannot_create_user_with_invalid_data(
+    manage_users_table, make_url, invalid_data, expected_error
 ):
     payload = {
         "email": "tintin@gmail.com",
         "username": "Tintin",
         "password": "y0u != n00b1e",
     }
-    payload = {**payload, **bad_data}
     async with aiohttp.ClientSession() as client:
-        async with client.post(make_url("/users/"), json=payload) as resp:
+        async with client.post(
+            make_url("/users/"), json={**payload, **invalid_data}
+        ) as resp:
             assert resp.status == 400
             assert resp.reason == "Bad Request"
             resp_json = await resp.json()
