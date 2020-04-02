@@ -256,3 +256,29 @@ async def test_cannot_create_user_with_invalid_email(
             assert resp.reason == "Bad Request"
             resp_json = await resp.json()
             assert resp_json["error"] == "invalid email"
+
+
+@pytest.mark.asyncio
+async def test_handle_user_login(manage_users_table, make_url):
+    login_user_payload = {
+        "email": "tintin@gmail.com",
+        "password": "y0u != n00b1e",
+    }
+    create_user_payload = {"username": "Tintin", **login_user_payload}
+    async with aiohttp.ClientSession() as test_client:
+
+        # create user
+        async with test_client.post(
+            make_url("/users/"), json=create_user_payload
+        ) as resp:
+            assert resp.status == 201
+            resp_json = await resp.json()
+            uid = resp_json["data"]["id"]
+
+        # attempt to log em in
+        async with test_client.post(
+            make_url("/login/"), json=login_user_payload
+        ) as resp:
+            assert resp.status == 200
+            resp_json = await resp.json()
+            assert resp_json["data"]["id"] == uid

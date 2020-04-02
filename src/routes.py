@@ -84,3 +84,35 @@ async def handle_user_create(request):
         status=201,
         reason="Created",
     )
+
+
+@routes.post("/login/")
+async def handle_user_login(request):
+    data = await request.json()
+    email = data["email"].strip()
+    password = data["password"].strip()
+
+    mode = "test" if request.config_dict["TEST"] else ""
+    users_table = get_table_fullname("users", mode)
+
+    conn = request.config_dict["DB_CONN"]
+    cursor = await conn.cursor()
+
+    await cursor.execute(
+        """
+        SELECT id, pwd_hash FROM {table_fullname} WHERE email = (?)
+        """.format(
+            table_fullname=users_table
+        ),
+        [email],
+    )
+    row = await cursor.fetchone()
+
+    if not (row and auth.check_password_hash(password, row["pwd_hash"])):
+        return web.json_response(
+            {"error": "user with given password and email not found"},
+            status=404,
+            reason="Not Found",
+        )
+
+    return web.json_response({"data": {"id": row["id"]}}, status=200, reason="Ok")
