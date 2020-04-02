@@ -9,6 +9,8 @@ from db.utils import get_db_path
 
 basedir = Path(__file__).absolute().parent
 routes = web.RouteTableDef()
+token_lifetime = 15 * 60
+
 load_dotenv(dotenv_path=basedir.joinpath(".env"))
 
 

@@ -1,10 +1,14 @@
 import gzip
+import hashlib
+import os
 import re
+from datetime import datetime, timedelta
 from difflib import SequenceMatcher
 
 import bcrypt
+import jwt
 
-from config import basedir
+from config import basedir, token_lifetime
 
 email_username_regex = re.compile(
     r"(^[-!#$%&'*+/=?^_`{}|~0-9A-Z]+(\.[-!#$%&'*+/=?^_`{}|~0-9A-Z]+)*\Z"
@@ -84,3 +88,35 @@ def validate_email(email):
     username, domain = email.rsplit("@", 1)
 
     return email_username_regex.match(username) and email_domain_regex.match(domain)
+
+
+def gen_access_token(uid):
+    jwt_data = {
+        "type": "access",
+        "uid": uid,
+        "exp": datetime.utcnow() + timedelta(seconds=token_lifetime),
+    }
+    jwt_token_bytes = jwt.encode(jwt_data, os.getenv("JWT_SECRET"), algorithm="HS256")
+    return jwt_token_bytes.decode("utf-8")
+
+
+def gen_refresh_token(uid, password_hash=None, request=None):
+    if password_hash is None:
+        assert request is not None
+        # use request to get to db and fetch passsword hash
+
+    jwt_data = {
+        "type": "refresh",
+        "uid": uid,
+        "key": _gen_refresh_key(uid, password_hash),
+    }
+    jwt_token_bytes = jwt.encode(jwt_data, os.getenv("JWT_SECRET"), algorithm="HS256")
+    return jwt_token_bytes.decode("utf-8")
+
+
+def _gen_refresh_key(uid, password_hash):
+    uid = str(uid)
+    # prepend length of each parameter to the respective parameter
+    # in the combo to guard against collisions
+    combo = "{0}{1}{2}{3}".format(len(uid), uid, len(password_hash), password_hash)
+    return hashlib.sha256(combo.encode("utf-8")).hexdigest()

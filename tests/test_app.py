@@ -285,6 +285,31 @@ async def test_handle_user_login(manage_users_table, make_url):
 
 
 @pytest.mark.asyncio
+async def test_tokens_are_returned_on_login(manage_users_table, make_url):
+    login_user_payload = {
+        "email": "tintin@gmail.com",
+        "password": "y0u != n00b1e",
+    }
+    create_user_payload = {"username": "Tintin", **login_user_payload}
+
+    async with aiohttp.ClientSession() as test_client:
+        # create user
+        async with test_client.post(
+            make_url("/users/"), json=create_user_payload
+        ) as resp:
+            assert resp.status == 201
+
+        # attempt to log them in
+        async with test_client.post(
+            make_url("/login/"), json=login_user_payload
+        ) as resp:
+            assert resp.status == 200
+            resp_json = await resp.json()
+            assert "access_token" in resp_json["data"]
+            assert "refresh_token" in resp_json["data"]
+
+
+@pytest.mark.asyncio
 async def test_cannot_login_with_bad_credentials(manage_users_table, make_url):
     create_user_payload = {
         "email": "tintin@gmail.com",

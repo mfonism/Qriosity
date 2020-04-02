@@ -115,4 +115,17 @@ async def handle_user_login(request):
             reason="Not Found",
         )
 
-    return web.json_response({"data": {"id": row["id"]}}, status=200, reason="Ok")
+    access_token = auth.gen_access_token(uid=row["id"])
+    refresh_token = auth.gen_refresh_token(uid=row["id"], password_hash=row["pwd_hash"])
+
+    return web.json_response(
+        {
+            "data": {
+                "id": row["id"],
+                "access_token": access_token,
+                "refresh_token": refresh_token,
+            }
+        },
+        status=200,
+        reason="Ok",
+    )
