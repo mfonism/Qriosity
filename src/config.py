@@ -2,12 +2,14 @@ from pathlib import Path
 
 import aiosqlite
 from aiohttp import web
+from dotenv import load_dotenv
 
 from db import stmts
 from db.utils import get_db_path
 
 basedir = Path(__file__).absolute().parent
 routes = web.RouteTableDef()
+load_dotenv(dotenv_path=basedir.joinpath(".env"))
 
 
 async def manage_db_conn(app):
