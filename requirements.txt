@@ -3,10 +3,14 @@ aiosqlite==0.11.0
 async-timeout==3.0.1
 attrs==19.3.0
 bcrypt==3.1.7
+cffi==1.14.0
 chardet==3.0.4
 idna==2.9
 idna-ssl==1.1.0
 multidict==4.7.5
+pycparser==2.19
+PyJWT==1.7.1
+six==1.14.0
 typing-extensions==3.7.4.1
 watchgod==0.5
 yarl==1.4.2
