@@ -110,7 +110,7 @@ async def handle_user_login(request):
 
     if not (row and auth.check_password_hash(password, row["pwd_hash"])):
         return web.json_response(
-            {"error": "user with given password and email not found"},
+            {"error": "user with given credentials not found"},
             status=404,
             reason="Not Found",
         )
