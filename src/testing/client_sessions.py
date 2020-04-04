@@ -38,6 +38,11 @@ class TestClientSession:
     ```
     """
 
+    # since the name of this class begins with Test*, pytest will try
+    # to collect it for testing -- as if it were a test case, which it isn't --
+    # so...
+    __test__ = False  # hey, pytest, I'm not a test case
+
     def __init__(self, **kwargs):
         self.client_session = aiohttp.ClientSession(**kwargs)
 
