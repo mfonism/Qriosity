@@ -1,5 +1,6 @@
 import aiohttp
 import pytest
+from datetime import datetime
 
 from src import auth
 from src.testing.client_sessions import TestClientSession
@@ -42,6 +43,7 @@ async def test_test_client_session_not_so_useful_outside_context_manager():
 
 
 @pytest.mark.asyncio
+@pytest.mark.freeze_time(datetime.utcnow())
 async def test_authorization_header_on_forced_authentication():
     """
     Assert that the appropriate headers are set in test client session
